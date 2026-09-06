@@ -1,0 +1,123 @@
+{
+  "version": 1,
+  "idle": {
+    "screensaver": 150,
+    "lock": 300
+  },
+  "bar": {
+    "position": "top",
+    "transparent": true,
+    "centerAnchor": "omarchy.clock",
+    "layout": {
+      "left": [
+        {
+          "id": "marlo4220.menu"
+        },
+        {
+          "id": "omarchy.workspaces"
+        }
+      ],
+      "center": [
+        {
+          "id": "marlo4220.indicators"
+        },
+        {
+          "id": "marlo4220.clock",
+          "format": "dddd HH:mm",
+          "formatAlt": "d MMMM 'W'ww yyyy",
+          "verticalFormat": "HH\n—\nmm"
+        },
+        {
+          "id": "omarchy.keyboard-layout"
+        },
+        {
+          "id": "marlo4220.weather"
+        },
+        {
+          "id": "marlo4220.system-update"
+        }
+      ],
+      "right": [
+        {
+          "id": "marlo4220.agents"
+        },
+        {
+          "id": "marlo4220.tray"
+        },
+        {
+          "id": "marlo4220.bluetooth"
+        },
+        {
+          "id": "marlo4220.network"
+        },
+        {
+          "id": "marlo4220.audio"
+        },
+        {
+          "id": "marlo4220.monitor"
+        },
+        {
+          "id": "marlo4220.power"
+        }
+      ]
+    }
+  },
+  "plugins": [
+    {
+      "id": "marlo4220.osd"
+    },
+    {
+      "id": "marlo4220.notifications"
+    },
+    {
+      "id": "marlo4220.reminders"
+    },
+    {
+      "id": "marlo4220.lock"
+    },
+    {
+      "id": "marlo4220.polkit"
+    },
+    {
+      "id": "marlo4220.clipboard"
+    },
+    {
+      "id": "marlo4220.emojis"
+    },
+    {
+      "id": "marlo4220.image-picker"
+    },
+    {
+      "id": "marlo4220.speedtest"
+    },
+    {
+      "id": "marlo4220.disk-speedtest"
+    }
+  ],
+  "disabledPlugins": [
+    "omarchy.menu",
+    "omarchy.osd",
+    "omarchy.notifications",
+    "omarchy.reminders",
+    "omarchy.lock",
+    "omarchy.polkit",
+    "omarchy.clipboard",
+    "omarchy.emojis",
+    "omarchy.image-picker",
+    "omarchy.speedtest",
+    "omarchy.disk-speedtest"
+  ],
+  "cloneSourceRestores": [
+    "marlo4220.menu",
+    "marlo4220.osd",
+    "marlo4220.notifications",
+    "marlo4220.reminders",
+    "marlo4220.lock",
+    "marlo4220.polkit",
+    "marlo4220.clipboard",
+    "marlo4220.emojis",
+    "marlo4220.image-picker",
+    "marlo4220.speedtest",
+    "marlo4220.disk-speedtest"
+  ]
+}

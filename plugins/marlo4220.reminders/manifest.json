@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "id": "marlo4220.reminders",
+  "name": "My Reminders",
+  "version": "1.0.0",
+  "author": "Omarchy",
+  "description": "Interactive reminder setup flow",
+  "kinds": [
+    "overlay"
+  ],
+  "keepLoaded": true,
+  "entryPoints": {
+    "overlay": "ReminderFlow.qml"
+  },
+  "omarchy": {
+    "clonedFrom": "omarchy.reminders"
+  }
+}

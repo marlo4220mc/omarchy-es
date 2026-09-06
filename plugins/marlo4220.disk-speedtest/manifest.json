@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "id": "marlo4220.disk-speedtest",
+  "name": "My Disk speed test",
+  "version": "1.0.0",
+  "author": "Omarchy",
+  "description": "Live disk write and read speed dials. Summon with: omarchy-shell shell summon omarchy.disk-speedtest",
+  "kinds": [
+    "panel"
+  ],
+  "entryPoints": {
+    "panel": "Panel.qml"
+  },
+  "omarchy": {
+    "clonedFrom": "omarchy.disk-speedtest"
+  }
+}
