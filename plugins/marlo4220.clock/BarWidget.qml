@@ -34,7 +34,7 @@ BarWidget {
   // Rendered through an explicit Spanish locale: Qt.formatDateTime uses the
   // process default, which is English on this setup, so the weekday and
   // month names in the bar label come out wrong without one.
-  readonly property var displayLocale: Qt.locale("es_PE")
+  readonly property var displayLocale: Qt.locale("es")
 
   function refresh() {
     displayDate = new Date()
