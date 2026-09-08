@@ -2,124 +2,72 @@
 
 Capa de traducción al español para [Omarchy](https://github.com/basecamp/omarchy).
 
-Este proyecto añade una capa en español sobre una instalación existente de Omarchy, traduciendo la interfaz de los plugins y el menú sin modificar los paquetes originales de Omarchy.
+Añade una capa en español sobre una instalación existente de Omarchy traduciendo
+los plugins, el menú y los atajos de teclado **en la fuente y sin modificar los
+paquetes originales de Omarchy** (nada bajo `/usr`).
 
-> **Importante:** `omarchy-es` no instala Omarchy ni CachyOS. Primero debes tener Omarchy funcionando y después instalar esta capa de traducción.
+> **Importante:** `omarchy-es` no instala Omarchy ni CachyOS. Primero debes tener
+> Omarchy funcionando y después instalar esta capa de traducción. Si instalas
+> todo desde cero, usa el instalador que ya integra esta capa.
 
-## ¿Qué traduce?
+## Qué traduce
 
-Actualmente incluye:
+| Componente | Dónde | Mecanismo |
+|---|---|---|
+| Barra, plugins y paneles | `~/.config/omarchy/plugins/marlo4220.*` | Copias de los plugins con textos y locales en español |
+| Menú raíz de Omarchy | `~/.config/omarchy/extensions/omarchy-menu.jsonc` | Extensión del menú en español |
+| Shell/barra | `~/.config/omarchy/shell.json` | Config de la barra |
+| Reloj y clima | Plugins `marlo4220.clock` / `marlo4220.weather` | `Qt.locale("es")` + días en español |
+| Menú de atajos (Super+K) | `~/.config/hypr/bindings.lua` | Catálogo de bindings con descripciones en español |
 
-- Barra y paneles de Omarchy.
-- Menú principal.
-- Notificaciones.
-- Bloqueo de pantalla.
-- Portapapeles.
-- Selector de imágenes.
-- Selector de emojis.
-- Audio y Bluetooth.
-- Red y bandeja del sistema.
-- Indicadores del sistema.
-- Actualizaciones del sistema.
-- Agentes.
-- Recordatorios.
-- Polkit.
-- Pruebas de velocidad.
-- Prueba de velocidad del disco.
-- Clima y reloj.
+## Por qué los atajos se traducen "en la fuente"
 
-### Componentes
+El menú de atajos (Super+K) es un listado de todos los bindings de Hyprland: sus
+descripciones salen de `hyprctl binds`, y `hyprctl binds` copia el campo
+`description` que recibe cada binding **al registrarse en la configuración**.
 
-| Ruta | Descripción |
-|------|-------------|
-| `plugins/marlo4220.*` | Plugins traducidos al español. |
-| `extensions/omarchy-menu.jsonc` | Menú de Omarchy traducido al español. |
-| `shell.json` | Configuración de la barra utilizando los plugins traducidos. |
-| `bootstrap.sh` | Instalador de la capa de traducción. |
+En vez de interceptar binarios o traducir el texto al vuelo, esta capa
+re-registra **todos** los bindings con la misma tecla, modificadores, dispatcher
+y argumento de los defaults, cambiando solo la descripción a español
+(`hypr/bindings.lua`). Resultado:
 
-## Requisitos
+- El menú Super+K sale 100 % en español leyendo la caché existente — **sin
+  coste por apertura** (cero transformaciones en caliente).
+- Se desactivan los defaults (`omarchy_default_bindings = false`) para que no
+  haya duplicados en inglés.
+- No se toca ni `/usr/*` ni el binario `omarchy-menu-keybindings`.
+- Cada atajo funciona exactamente igual que antes: la descripción no participa
+  en la ejecución.
 
-- Omarchy ya instalado y funcionando.
-- Usuario con acceso a `~/.config/omarchy/`.
-- Bash.
-- Comando `omarchy` disponible.
+Única variación visible: el listado se ordena por combinación de teclas en
+lugar del agrupado curado (los patrones de orden del script original son ingleses).
 
-No es necesario reinstalar Omarchy ni modificar los paquetes del sistema.
+## Instalación (capa sobre Omarchy existente)
 
-## Instalación
-
-Clona el repositorio y ejecuta el instalador:
-
-```bash
-git clone https://github.com/marlo4220mc/omarchy-es.git
-cd omarchy-es
+```sh
 chmod +x bootstrap.sh
 ./bootstrap.sh
 ```
 
-El instalador:
+Esto copia los plugins, el menú, `shell.json`, instala el catálogo de atajos en
+`~/.config/hypr/bindings.lua`, activa `omarchy_default_bindings = false` en
+`~/.config/hypr/hyprland.lua` y reinicia el shell de Omarchy.
 
-1. Comprueba que Omarchy esté instalado.
-2. Crea las carpetas necesarias dentro de `~/.config/omarchy/`.
-3. Copia el menú traducido.
-4. Copia los plugins `marlo4220.*`.
-5. Hace una copia de seguridad del `shell.json` existente antes de reemplazarlo.
-6. Reinicia el shell de Omarchy.
+## Instalación desde cero
 
-Al finalizar debería aparecer:
+El repo [omarchy-on-cachyos-es](https://github.com/marlo4220mc/omarchy-on-cachyos-es/README.md)
+instala CachyOS + Omarchy y aplica esta capa automáticamente
+(`bin/apply-es-layer.sh`).
 
-```text
-Listo: Omarchy en español.
-```
+## Notas
 
-## Copias de seguridad
-
-Si ya tienes un `shell.json`, el instalador crea automáticamente una copia de seguridad con un nombre similar a:
-
-```text
-shell.json.bak.XXXXXXXXXX
-```
-
-Los plugins y el menú instalados por esta capa utilizan el espacio de configuración del usuario, por lo que no reemplazan los archivos originales de `/usr/share/omarchy`.
-
-## Actualizar la traducción
-
-Para instalar una versión más reciente:
-
-```bash
-cd omarchy-es
-git pull
-./bootstrap.sh
-```
-
-## Limitaciones actuales
-
-Esta capa no traduce todo Omarchy.
-
-No están cubiertos actualmente:
-
-- Textos generados directamente por los binarios/comandos `omarchy …`.
-- Textos pertenecientes al núcleo `qs.Ui` y `qs.Commons`.
-- Componentes que formen parte directamente del paquete original de Omarchy y no puedan ser sustituidos mediante plugins o extensiones.
-
-Esos componentes requieren modificar o mantener un fork del código fuente de Omarchy.
-
-## Filosofía del proyecto
-
-`omarchy-es` mantiene la traducción separada de los archivos originales de Omarchy. De esta forma, las actualizaciones de Omarchy pueden continuar realizándose sin tener que modificar manualmente los archivos del sistema.
-
-Los plugins de esta capa utilizan el prefijo `marlo4220.*` para diferenciarlos de los plugins originales.
-
-## Desarrollo
-
-Las traducciones y modificaciones se mantienen en este repositorio:
-
-```text
-https://github.com/marlo4220mc/omarchy-es
-```
-
-Las contribuciones, correcciones de traducción y nuevas traducciones son bienvenidas.
-
-## Licencia
-
-Consulta los archivos y licencias correspondientes de Omarchy y de cada componente incluido. Esta capa de traducción no pretende sustituir las licencias originales de los proyectos sobre los que se basa.
+- El título del selector del menú de atajos sigue diciendo `Keybindings`
+  (texto fijo del binario original de Omarchy, fuera de alcance de una capa de
+  configuración).
+- Dos filas del menú («Download Video from Web App» y «Copy URL from Web App»)
+  las registra al vuelo el host nativo de Chromium de Omarchy y quedan en su
+  idioma original.
+- Si Omarchy añade bindings nuevos en una versión futura, aparecerán en inglés
+  hasta que el catálogo de esta capa los espeje (cambio de una línea).
+- El catálogo `hypr/bindings.lua` es la única fuente de atajos; añade ahí tus
+  combinaciones personales en español.

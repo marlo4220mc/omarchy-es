@@ -35,6 +35,21 @@ if [ -f "$SRC/shell.json" ]; then
   cp "$SRC/shell.json" "$DEST/shell.json"
 fi
 
+if [ -f "$SRC/hypr/bindings.lua" ]; then
+  echo "→ Instalando el catálogo de atajos en español (~/.config/hypr/bindings.lua)…"
+  mkdir -p "$HOME/.config/hypr"
+  if [ -f "$HOME/.config/hypr/bindings.lua" ] && ! grep -q "Capa omarchy-es" "$HOME/.config/hypr/bindings.lua"; then
+    cp "$HOME/.config/hypr/bindings.lua" "$HOME/.config/hypr/bindings.lua.bak.$(date +%s)"
+  fi
+  cp "$SRC/hypr/bindings.lua" "$HOME/.config/hypr/bindings.lua"
+fi
+
+if [ -f "$HOME/.config/hypr/hyprland.lua" ] \
+    && ! grep -q '^omarchy_default_bindings = false' "$HOME/.config/hypr/hyprland.lua"; then
+  echo "→ Activando omarchy_default_bindings = false (el catálogo ES gobierna los atajos)…"
+  sed -i '1i\omarchy_default_bindings = false' "$HOME/.config/hypr/hyprland.lua"
+fi
+
 echo "→ Reiniciando el shell…"
 omarchy restart shell
 
