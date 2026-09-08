@@ -1278,9 +1278,20 @@ Item {
 
                 Text {
                   id: labelText
-                  textFormat: Text.PlainText
+                  // Rows marked by the es-layer carry an invisible English
+                  // anchor wrapped in <font>, which the original overlay
+                  // script's prioritization regexes match. Only those rows
+                  // need rich-text so the anchor renders transparent.
+                  // Rich text collapses repeated spaces (HTML-like), so the
+                  // visible part turns every space into &nbsp; to keep the
+                  // exact combo/arrow spacing; the anchor tag is left as-is.
+                  textFormat: root.dmenuActive && row.label.indexOf("<font") >= 0 ? Text.RichText : Text.PlainText
                   width: parent.width
-                  text: row.label
+                  text: {
+                    if (!(root.dmenuActive && row.label.indexOf("<font") >= 0)) return row.label
+                    var m = row.label.match(/^([\s\S]*?)(<font[\s\S]*<\/font>)?$/)
+                    return (m[1] || "").replace(/ /g, "&nbsp;") + (m[2] || "")
+                  }
                   color: row.hasCursor ? root.selectedText : root.foreground
                   font.family: root.fontFamily
                   font.pixelSize: Style.font.heading

@@ -39,8 +39,28 @@ y argumento de los defaults, cambiando solo la descripción a español
 - Cada atajo funciona exactamente igual que antes: la descripción no participa
   en la ejecución.
 
-Única variación visible: el listado se ordena por combinación de teclas en
-lugar del agrupado curado (los patrones de orden del script original son ingleses).
+### El orden agrupado se conserva con anclas invisibles
+
+Las descripciones en español no casan con los patrones de orden del script
+original (están en inglés), así que el listado saldría ordenado por combinación
+de teclas. Para conservar el agrupado curado de fábrica, `hypr/bindings.lua`
+añade a cada descripción una **ancla invisible**:
+
+```
+description = "Menú de Omarchy <font color=\"transparent\">Omarchy menu</font>"
+```
+
+- El ancla es un texto en inglés dentro de `<font color="transparent">…</font>`:
+  los regex de orden del script original la casan y restauran el agrupado
+  (Atajos de teclado, Menú de Omarchy, Terminal, Navegador, …).
+- Es invisible al usuario: se pinta con color totalmente transparente.
+- Cuando la descripción original ya es un patrón de orden (p. ej. regla 27,
+  `SUPER SHIFT … B → Browser`), la ancla repite la palabra clave; cuando el
+  orden se decide por la propia combinación (p. ej. `XF86`), no lleva ancla.
+- El plugin `marlo4220.menu` renderiza esas filas como rich text
+  (`Text.RichText`) solo cuando contienen `<font>`; el resto sigue en texto
+  plano, y los espacios de la parte visible se convierten en `&nbsp;` para que
+  la alineación de teclas y la flecha " → " no colapsen bajo el rich text.
 
 ## Instalación (capa sobre Omarchy existente)
 
@@ -55,7 +75,7 @@ Esto copia los plugins, el menú, `shell.json`, instala el catálogo de atajos e
 
 ## Instalación desde cero
 
-El repo [omarchy-on-cachyos-es](https://github.com/marlo4220mc/omarchy-on-cachyos-es/README.md)
+El repo [omarchy-on-cachyos-es](https://github.com/marlo4220mc/omarchy-on-cachyos-es)
 instala CachyOS + Omarchy y aplica esta capa automáticamente
 (`bin/apply-es-layer.sh`).
 
