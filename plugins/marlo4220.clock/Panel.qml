@@ -84,6 +84,23 @@ Panel {
   readonly property int weekColumnWidth: Style.space(32)
   readonly property int gutterWidth: Style.space(14)
 
+  // The hero date headline is tuned for English month names ("September
+  // 20"); Spanish ones run wider ("septiembre" vs "september") and the
+  // theme's spacing scale can shrink the card, so the date is measured at
+  // its natural 52px and stepped down only as far as the clipped column
+  // needs it to stay intact.
+  readonly property string heroDateText: root.labelLocale.toString(root.today, "MMMM d")
+  readonly property real heroDateAvailableWidth: Math.max(
+    Style.space(48), calendarScroll.width - heroIconMeasure.implicitWidth - Style.space(22))
+  readonly property int heroDatePixelSize: {
+    var natural = heroDateMeasure.implicitWidth
+    if (natural <= 0) return 52
+    if (natural <= root.heroDateAvailableWidth) return 52
+    // Whole pixels below the measurement, with one reserved for rounding
+    // drift in glyph advances across fonts.
+    return Math.max(28, Math.floor(52 * root.heroDateAvailableWidth / natural) - 1)
+  }
+
   function open() {
     refresh()
     root.controller.show()
@@ -119,7 +136,9 @@ Panel {
   // Summoning by hotkey moves no pointer, so a hover the bar was still
   // holding must not keep the center indicators revealed behind the panel.
   function setCenterHoverRevealSuppressed(value) {
-    if (root.bar && "centerHoverRevealSuppressed" in root.bar)
+    if (root.bar && typeof root.bar.setCenterHoverRevealSuppressed === "function")
+      root.bar.setCenterHoverRevealSuppressed(value)
+    else if (root.bar && "centerHoverRevealSuppressed" in root.bar)
       root.bar.centerHoverRevealSuppressed = value
   }
 
@@ -288,6 +307,25 @@ Panel {
             width: parent.width
             height: heroRow.height
 
+            // Measuring rulers: the layout needs the natural widths of the
+            // headline and glyph to decide how far the date may be scaled
+            // down (heroDatePixelSize). Kept invisible either way.
+            Text {
+              id: heroDateMeasure
+              visible: false
+              text: root.heroDateText
+              font.family: root.contentFontFamily
+              font.pixelSize: 52
+              font.bold: true
+            }
+            Text {
+              id: heroIconMeasure
+              visible: false
+              text: "󰃭"
+              font.family: root.contentFontFamily
+              font.pixelSize: 48
+            }
+
             Row {
               id: heroRow
               anchors.horizontalCenter: parent.horizontalCenter
@@ -318,7 +356,7 @@ Panel {
                   ? Style.hoverStateColor(root.contentForeground, Color.accent)
                   : root.contentForeground
                 font.family: root.contentFontFamily
-                font.pixelSize: 52
+                font.pixelSize: root.heroDatePixelSize
                 font.bold: true
               }
             }

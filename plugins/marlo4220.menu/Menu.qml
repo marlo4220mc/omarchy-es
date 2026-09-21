@@ -5,6 +5,7 @@ import QtQuick
 import qs.Commons
 import qs.Ui
 import "MenuModel.js" as MenuModel
+import "AppSearch.js" as AppSearch
 
 Item {
   id: root
@@ -77,7 +78,43 @@ Item {
 
   // Shared application engine (entries, hidden filters, icons, launch,
   // removal), owned by the shell and also used by the standalone launcher.
-  readonly property var appLibrary: root.shell ? root.shell.appLibrary : null
+  readonly property var appLibrary: root.shell && root.shell.appLibrary ? root.shell.appLibrary : appCompat
+  // Fallback for cloned menu plugins on omarchy shell versions whose scoped
+  // plugin shell does not provision shell.appLibrary (observed on 4.0.4 while
+  // the first-party omarchy.menu still gets it). Rows are built straight from
+  // DesktopEntries (the same source the shared AppLibrary consumes) so the
+  // apps submenu keeps working on clones. Launch/remove replicate the shell's
+  // AppLibrary behavior.
+  QtObject {
+    id: appCompat
+    signal appsChanged()
+    function entryName(entry) { return AppSearch.entryName(entry) }
+    function entrySubtext(entry) { return AppSearch.entrySubtext(entry) }
+    function sortedEntries(query) {
+      var values = (typeof DesktopEntries !== "undefined") ? DesktopEntries.applications.values : []
+      return AppSearch.sortedEntries(values, String(query || ""))
+    }
+    function iconSource(icon) {
+      var value = String(icon || "")
+      if (value.length === 0) return Quickshell.iconPath("application-x-executable", true)
+      if (value.indexOf("file://") === 0 || value.indexOf("image://") === 0) return value
+      if (value.charAt(0) === "/") return Util.fileUrl(value)
+      var themed = Quickshell.iconPath(value, true)
+      if (themed.length > 0) return themed
+      return Quickshell.iconPath("application-x-executable", true)
+    }
+    function refreshIcons() { }
+    function launch(desktopId, name) {
+      var id = String(desktopId || "")
+      if (!id) return
+      Util.execDetached("uwsm-app -- gtk-launch " + Util.shellQuote(id + ".desktop"))
+    }
+    function remove(desktopId, name) {
+      var id = String(desktopId || "")
+      if (!id) return
+      Util.execDetached(Util.shellQuote(root.omarchyPath + "/bin/omarchy-remove-launcher-entry") + " " + Util.shellQuote(id) + " " + Util.shellQuote(String(name || id)))
+    }
+  }
   property bool deleteConfirmOpen: false
   property var deleteTarget: null
   onOpenedChanged: if (!opened) { deleteConfirmOpen = false; deleteTarget = null }

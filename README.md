@@ -91,3 +91,8 @@ instala CachyOS + Omarchy y aplica esta capa automáticamente
   hasta que el catálogo de esta capa los espeje (cambio de una línea).
 - El catálogo `hypr/bindings.lua` es la única fuente de atajos; añade ahí tus
   combinaciones personales en español.
+- Compatibilidad con Omarchy ≥ 4.0.4: el scoped-shell de los plugins clonados ya
+  no inyecta `shell.appLibrary`, así que el plugin del menú incluye un respaldo
+  en `Menu.qml` que lee las aplicaciones directamente de `DesktopEntries`
+  (con `AppSearch.js`, copia idéntica del helper del shell). Sin ese respaldo,
+  el submenú de aplicaciones quedaría vacío tras la actualización.
