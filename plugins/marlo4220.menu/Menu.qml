@@ -946,6 +946,24 @@ Item {
     referenceItem: card
   }
 
+  // Bridge for the appCompat fallback: when the scoped shell does not
+  // provision shell.appLibrary, appCompat's own appsChanged() signal is
+  // never emitted by anyone, so mergeAppRows() would only ever run at
+  // startup (after a session restart) and live-installed apps would not
+  // appear until then. Watch DesktopEntries directly and forward it.
+  Timer {
+    id: appCompatRefreshDebounce
+    interval: 500
+    onTriggered: appCompat.appsChanged()
+  }
+
+  Connections {
+    target: typeof DesktopEntries !== "undefined" ? DesktopEntries.applications : null
+    function onValuesChanged() {
+      if (root.appLibrary === appCompat) appCompatRefreshDebounce.restart()
+    }
+  }
+
   Connections {
     target: root.appLibrary
     function onAppsChanged() {
