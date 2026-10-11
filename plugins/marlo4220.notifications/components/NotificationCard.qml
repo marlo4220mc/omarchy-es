@@ -27,6 +27,10 @@ BorderSurface {
   property int urgency: 1
   property double timestamp: 0
   property int cornerRadius: 0
+  // Icon name -> on-disk path map, injected by the service's disk scan. Lets a
+  // notification from an app installed after the shell started still resolve
+  // its icon (Qt's themed icon cache is built at startup and never re-scans).
+  property var iconIndex: ({})
 
   // System monospace font injected by the container.
   property string fontFamily: ""
@@ -61,6 +65,11 @@ BorderSurface {
     if (value.length === 0) return ""
     if (value.indexOf("file://") === 0 || value.indexOf("image://") === 0) return value
     if (value.charAt(0) === "/") return Util.fileUrl(value)
+    // Prefer the on-disk index before Qt's themed lookup: the themed cache is
+    // built at startup and never re-scans, so an app installed after this
+    // process started would otherwise show no icon until the shell restarts.
+    var found = root.iconIndex[value]
+    if (found) return Util.fileUrl(found)
     return Quickshell.iconPath(value, true)
   }
 

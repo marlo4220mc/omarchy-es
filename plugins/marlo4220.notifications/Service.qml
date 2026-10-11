@@ -58,6 +58,45 @@ Item {
   // map only holds a wrapper, which degrades to a catchable error instead.
   property var liveRefs: ({})
 
+  // Icon name -> on-disk path map for icons Qt's themed lookup misses because
+  // they appeared after this process started (its cache never re-scans).
+  // Refreshed on startup and whenever a notification arrives, so a toast from a
+  // freshly installed app still resolves its icon live. Mirrors the first-party
+  // AppLibrary service (cloned plugins don't receive shell.appLibrary).
+  property var notificationIconIndex: ({})
+  property var notificationPendingIconIndex: ({})
+
+  function notificationIconScanCommand() {
+    // List app/device icons across the XDG icon dirs and /usr/share/pixmaps as
+    // "<path>" lines. SVGs are emitted before PNGs so the parser, which keeps
+    // the first hit per name, prefers scalable icons.
+    return [
+      'dirs="$HOME/.icons $HOME/.local/share/icons";',
+      'IFS=":"; for d in ${XDG_DATA_DIRS:-/usr/local/share:/usr/share}; do dirs="$dirs $d/icons"; done; unset IFS;',
+      'for ext in svg png; do',
+      '  for base in $dirs; do',
+      '    [[ -d $base ]] && find "$base" \\( -path "*/apps/*" -o -path "*/devices/*" \\) -name "*.$ext" 2>/dev/null;',
+      '  done;',
+      '  find /usr/share/pixmaps -maxdepth 1 -name "*.$ext" 2>/dev/null;',
+      'done'
+    ].join(' ')
+  }
+
+  function indexNotificationIconLine(path) {
+    var value = String(path || "").trim()
+    if (value.length === 0) return
+    var slash = value.lastIndexOf("/")
+    var file = slash >= 0 ? value.slice(slash + 1) : value
+    var dot = file.lastIndexOf(".")
+    var name = dot > 0 ? file.slice(0, dot) : file
+    if (name.length > 0 && service.notificationPendingIconIndex[name] === undefined)
+      service.notificationPendingIconIndex[name] = value
+  }
+
+  function refreshNotificationIcons() {
+    notificationIconDebounce.restart()
+  }
+
   // PersistentProperties handles in-process QML reloads. The on-disk
   // notifications.json file is the cross-restart backstop — its `dnd` key
   // is hydrated into persisted.doNotDisturb on startup and written back via
@@ -158,6 +197,9 @@ Item {
     // as this signal handler returns, which would null out the `ref` we just
     // captured for the popup card.
     notification.tracked = true
+    // A toast from an app installed after this process started needs the disk
+    // index refreshed before its icon can resolve (see refreshNotificationIcons).
+    service.refreshNotificationIcons()
     var snapshot = snapshotOf(notification)
     liveRefs[snapshot.originalId] = notification
     // Guard the delete: a newer notification may have reused this originalId
@@ -834,6 +876,7 @@ Item {
 
   Component.onCompleted: {
     ensureDirsProc.running = true
+    notificationIconScan.running = true
     // Once mkdir has had a tick, load the existing settings file. FileView
     // surfaces an empty string when the file doesn't exist; loadSettings
     // handles that path.
@@ -924,6 +967,25 @@ Item {
     }
 
     function ping(): string { return "ok" }
+  }
+
+  // ---------------------------------------------------- icon index (disk scan)
+
+  Process {
+    id: notificationIconScan
+    command: ["bash", "-c", service.notificationIconScanCommand()]
+    stdout: SplitParser { onRead: function(line) { service.indexNotificationIconLine(line) } }
+    onStarted: service.notificationPendingIconIndex = ({})
+    // Swapping the property re-evaluates every card's iconSource() binding, so
+    // newly found icons appear without rebuilding the popup list.
+    onExited: service.notificationIconIndex = service.notificationPendingIconIndex
+  }
+
+  // Coalesces bursts (a package install touches many entries) into one rescan.
+  Timer {
+    id: notificationIconDebounce
+    interval: 750
+    onTriggered: if (!notificationIconScan.running) notificationIconScan.running = true
   }
 
   // ---------------------------------------------------- server
@@ -1048,6 +1110,7 @@ Item {
               image: cardSlot.image
               urgency: cardSlot.urgency
               timestamp: cardSlot.timestamp
+              iconIndex: service.notificationIconIndex
               cornerRadius: service.cornerRadius
               fontFamily: service.shell && service.shell.bar ? service.shell.bar.fontFamily : ""
               glyph: cardSlot.glyph
