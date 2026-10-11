@@ -95,16 +95,53 @@ Item {
       var values = (typeof DesktopEntries !== "undefined") ? DesktopEntries.applications.values : []
       return AppSearch.sortedEntries(values, String(query || ""))
     }
+    // Icon cache for apps installed after this process started. Qt's themed
+    // icon lookup builds its index at startup and never re-scans, so a fresh
+    // .desktop's icon would stay empty until the shell restarts. Mirror the
+    // shell AppLibrary's disk scan instead: map icon names to files under the
+    // XDG icon dirs and consult that map before falling back to Qt.
+    property var iconIndex: ({})
+    property var pendingIconIndex: ({})
+
+    function iconIndexScanCommand() {
+      return [
+        'dirs="$HOME/.icons $HOME/.local/share/icons";',
+        'IFS=":"; for d in ${XDG_DATA_DIRS:-/usr/local/share:/usr/share}; do dirs="$dirs $d/icons"; done; unset IFS;',
+        'for ext in svg png; do',
+        '  for base in $dirs; do',
+        '    [[ -d $base ]] && find "$base" \\( -path "*/apps/*" -o -path "*/devices/*" \\) -name "*.$ext" 2>/dev/null;',
+        '  done;',
+        '  find /usr/share/pixmaps -maxdepth 1 -name "*.$ext" 2>/dev/null;',
+        'done'
+      ].join(' ')
+    }
+
+    function indexIconLine(path) {
+      var value = String(path || "").trim()
+      if (value.length === 0) return
+      var slash = value.lastIndexOf("/")
+      var file = slash >= 0 ? value.slice(slash + 1) : value
+      var dot = file.lastIndexOf(".")
+      var name = dot > 0 ? file.slice(0, dot) : file
+      if (name.length > 0 && appCompat.pendingIconIndex[name] === undefined)
+        appCompat.pendingIconIndex[name] = value
+    }
+
     function iconSource(icon) {
       var value = String(icon || "")
       if (value.length === 0) return Quickshell.iconPath("application-x-executable", true)
       if (value.indexOf("file://") === 0 || value.indexOf("image://") === 0) return value
       if (value.charAt(0) === "/") return Util.fileUrl(value)
+      var found = appCompat.iconIndex[value]
+      if (found) return Util.fileUrl(found)
       var themed = Quickshell.iconPath(value, true)
       if (themed.length > 0) return themed
       return Quickshell.iconPath("application-x-executable", true)
     }
-    function refreshIcons() { }
+
+    function refreshIcons() {
+      if (!appCompatIconScan.running) appCompatIconScan.running = true
+    }
     function launch(desktopId, name) {
       var id = String(desktopId || "")
       if (!id) return
@@ -115,6 +152,26 @@ Item {
       if (!id) return
       Util.execDetached(Util.shellQuote(root.omarchyPath + "/bin/omarchy-remove-launcher-entry") + " " + Util.shellQuote(id) + " " + Util.shellQuote(String(name || id)))
     }
+  }
+
+  Process {
+    id: appCompatIconScan
+    command: ["bash", "-c", appCompat.iconIndexScanCommand()]
+    stdout: SplitParser { onRead: function(line) { appCompat.indexIconLine(line) } }
+    onStarted: appCompat.pendingIconIndex = ({})
+    // Swapping the property re-evaluates every iconSource() binding, so
+    // newly found icons appear without rebuilding the list.
+    onExited: appCompat.iconIndex = appCompat.pendingIconIndex
+  }
+
+  Timer {
+    id: appCompatIconDebounce
+    interval: 750
+    onTriggered: if (!appCompatIconScan.running) appCompatIconScan.running = true
+  }
+
+  Component.onCompleted: {
+    appCompatIconScan.running = true
   }
   property bool deleteConfirmOpen: false
   property var deleteTarget: null
@@ -961,7 +1018,12 @@ Item {
   Connections {
     target: typeof DesktopEntries !== "undefined" ? DesktopEntries.applications : null
     function onValuesChanged() {
-      if (root.appLibrary === appCompat) appCompatRefreshDebounce.restart()
+      if (root.appLibrary === appCompat) {
+        appCompatRefreshDebounce.restart()
+        // Same live app-list refresh also re-scans the icon index, so newly
+        // installed apps get their icon without restarting the shell.
+        appCompatIconDebounce.restart()
+      }
     }
   }
 
