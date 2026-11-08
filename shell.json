@@ -17,10 +17,12 @@
           "id": "omarchy.workspaces"
         }
       ],
-      "center": [
+      "centerBegin": [
         {
-          "id": "marlo4220.indicators"
-        },
+          "id": "omarchy.indicators"
+        }
+      ],
+      "center": [
         {
           "id": "marlo4220.clock",
           "format": "dddd HH:mm",

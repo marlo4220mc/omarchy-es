@@ -13,10 +13,17 @@ fi
 
 mkdir -p "$DEST/plugins" "$DEST/extensions"
 
+echo "→ Configurando idioma nativo en español (Omarchy 4.5+ I18n)…"
+echo "es-MX" > "$DEST/language"
+
+# En Omarchy 4.5+, omarchy.indicators tiene soporte I18n nativo y permisos de sistema;
+# removemos el clon previo para evitar que bloquee los servicios de DND/NightLight/StayAwake:
+rm -rf "$DEST/plugins/marlo4220.indicators"
+
 echo "→ Copiando el menú en español…"
 cp "$SRC/extensions/omarchy-menu.jsonc" "$DEST/extensions/"
 
-echo "→ Copiando los 22 plugins traducidos…"
+echo "→ Copiando los plugins traducidos…"
 for plugin in "$SRC"/plugins/marlo4220.*; do
   [ -d "$plugin" ] || continue
   name="$(basename "$plugin")"
